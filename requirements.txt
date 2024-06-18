@@ -1,0 +1,17 @@
+flask
+python-dotenv
+scikit-learn
+joblib
+scipy
+Flask-APScheduler
+flask_script
+pandas
+argparse
+asyncio
+requests
+telethon
+openpyxl
+tqdm
+networkx
+matplotlib
+python-louvain
