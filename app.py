@@ -1,6 +1,9 @@
 from flask import Flask, request
 import joblib
 from flask_apscheduler import APScheduler
+import os
+import subprocess
+import requests
 
 app = Flask(__name__)
 
@@ -36,8 +39,40 @@ def telegram():
 
     return return_array
 
-def job1():
-    print('hello world')
 
-sched.add_job(id='job1', func=job1, trigger='interval', seconds=5)
+# get channels that need to be updated
+def getChannels():
+    url = "https://analytics.mbsmonitoring.com/api/get-telegram-channels"
+    payload = ""
+    headers = {}
+
+    print('> getting channels')
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+
+    if response.status_code == 200:
+        print('> got channels')
+        channels = response.json()
+        for channel in channels:
+            print(f"> running tool for {channel["username"]}")
+            job1(channel)
+
+def job1(channel):
+    try:
+        cwd = os.getcwd()
+        nwd = cwd + '../telegram-api'
+        os.chdir(nwd)
+        # run the subprocess for scrapping telegram data
+        print("> Runing tool")
+        if (channel["latest_social_media_post"]):
+            result = subprocess.run(['python', 'main.py', '--telegram-channel', channel["username"], '--min-id', channel['latest_social_media_post']['platform_id']])
+        else:
+            result = subprocess.run(['python', 'main.py', '--telegram-channel', channel["username"]])
+
+        print(result.stdout)
+        os.chdir(cwd)
+    except Exception as e:
+        print(f"An error occured {e}")
+
+sched.add_job(id='job1', func=getChannels, trigger='interval', hours=1)
 #sched.start()
